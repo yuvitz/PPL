@@ -1,4 +1,5 @@
 import * as R from 'ramda'
+import { NumericLiteral } from 'typescript';
 // Q2.1
 export interface NumberTree {
     root: number;
@@ -63,28 +64,86 @@ function (school: School): boolean {
 
 
 // Q2.4
-// export interface YMDDate {
-//     year: number;
-//     month: number;
-//     day: number;
-// }
+export interface YMDDate {
+    year: number;
+    month: number;
+    day: number;
+}
 
-// export const comesBefore: (date1: YMDDate, date2: YMDDate) => boolean = (date1, date2) => {
-//     if (date1.year < date2.year) {
-//         return true;
-//     }
-//     if (date1.year === date2.year && date1.month < date2.month) {
-//         return true;
-//     }
-//     if (date1.year === date2.year && date1.month === date2.month && date1.day < date2.day) {
-//         return true;
-//     }
-//     return false;
-// }
+export const comesBefore: (date1: YMDDate, date2: YMDDate) => boolean = (date1, date2) => {
+    if (date1.year < date2.year) {
+        return true;
+    }
+    if (date1.year === date2.year && date1.month < date2.month) {
+        return true;
+    }
+    if (date1.year === date2.year && date1.month === date2.month && date1.day < date2.day) {
+        return true;
+    }
+    return false;
+}
 
-// export interface ChargeResult {
-//     amountLeft: number;
-//     wallet: Wallet;
-// }
+type PaymentMethod = Wallet | DebitCard | Cash;
 
-// export const charge;
+export interface ChargeResult {
+    amountLeft: number;
+    wallet: Wallet;
+}
+
+interface Wallet {
+    tag: "wallet";
+    paymentMethods: PaymentMethod[];
+}
+
+interface DebitCard{
+    tag: "debit card";
+    expirationDate: YMDDate;
+    amount: number;
+}
+
+interface Cash{
+    tag: "cash";
+    amount: number;
+}
+// predicates
+const iSCash = (x: PaymentMethod): x is Cash => x.tag === "cash";
+const isDebitCard = (x: PaymentMethod): x is DebitCard => x.tag === "debit card";
+const isWallet = (x: PaymentMethod): x is Wallet => x.tag === "wallet";
+// constructors
+const makeCash = (amount: number): Cash =>
+    ({tag: "cash", amount: amount});
+const makeDebitCard = (amount: number, expirationDate: YMDDate): DebitCard =>
+    ({tag: "debit card", expirationDate: expirationDate, amount: amount});
+const makeWallet = (paymentMethods: PaymentMethod[]): Wallet =>
+    ({tag: "wallet", paymentMethods: paymentMethods});
+const makeChargeResult = (amountLeft: number, wallet: Wallet): ChargeResult =>
+    ({amountLeft:amountLeft, wallet:wallet});
+const addChRes = (old: ChargeResult, toAdd: ChargeResult): ChargeResult => 
+    ({amountLeft: toAdd.amountLeft, wallet: makeWallet(old.wallet.paymentMethods.concat(toAdd.wallet.paymentMethods))})
+
+export const charge = (pm: PaymentMethod, amount: number, today: YMDDate): ChargeResult =>
+    iSCash(pm) ? (
+        amount > pm.amount ? ( 
+            makeChargeResult(amount - pm.amount, makeWallet([makeCash(0)]))) 
+            : ( makeChargeResult(0, makeWallet([makeCash(pm.amount - amount)])))) 
+            
+    : isDebitCard(pm) ? (
+        comesBefore(today, pm.expirationDate) ? (
+            amount > pm.amount ? (
+                makeChargeResult(amount - pm.amount, makeWallet([makeDebitCard(0, pm.expirationDate)]))) 
+                : ( makeChargeResult(0, makeWallet([makeDebitCard(pm.amount - amount, pm.expirationDate)])))):
+            // DebitCard is out of date
+            makeChargeResult(amount, makeWallet([makeDebitCard(pm.amount, pm.expirationDate)])))
+
+    : isWallet(pm) ? (
+        pm.paymentMethods.reduce((acc: ChargeResult, curr:PaymentMethod) => 
+            addChRes(acc, charge(curr, acc.amountLeft, today)), makeChargeResult(amount, makeWallet([]))))
+    : null;
+
+const wallet2 = makeWallet([
+    makeCash(4500),
+    makeDebitCard(3000, {year: 2010, month: 7, day: 31}), // note the expiration date
+    makeDebitCard(300, {year: 2020, month: 7, day: 31})
+    ]);
+
+console.log(JSON.stringify(charge(wallet2, 7000, {year: 2019, month: 3, day: 7})));
