@@ -1,0 +1,96 @@
+#lang racket
+
+;; Signature: empty?(T)
+;; Purpose: returns true iff the given expression is the empty list
+;; Type: [T -> boolean]
+;; Precondition: true
+;; Tests: (empty? '()) ⇒ #t
+;;        (empty? '(1 2 3)) ⇒ #f
+;;        (empty? 4) ⇒ #f
+
+(define empty?
+  (lambda (x)
+     (equal? '() x)))
+
+;; Signature: list?(T)
+;; Purpose: returns true iff the given expression is a list
+;; Type: [T -> boolean]
+;; Precondition: true
+;; Tests: (list? '()) ⇒ #t
+;;        (list? (cons 1 (cons 2 '()))) ⇒ #t
+;;        (list? (cons 1 2)) ⇒ #f
+
+(define list?
+  (lambda (x)
+    (if (pair? x)
+      (if(pair? (cdr x))
+        #t
+        #f )
+      #f )))
+
+;; Signature: equal-list?(T T)
+;; Purpose: returns true iff the given two expressions are equal lists
+;; Type: [T -> boolean]
+;; Precondition: true
+;; Tests: (equal-list? '(1 2) '(1 2)) ⇒ #t
+;;        (equal-list? '(1 2) '(1 3)) ⇒ #f
+;;        (equal-list? '(#t "a" (2 'b)) '(#t "a" (2 'b))) ⇒ #t
+;;        (equal-list? (cons 1 2) (cons 1 2)) ⇒ #f
+
+(define equal-list?
+  (lambda (x y)
+    (if(list? x)
+       (if(list? y)
+          (if(equal? (car x) (car y))
+             (if(list? (cdr x))
+                (if(list? (cdr y))
+                   (equal-list? (cdr x) (cdr y))
+                   #f )
+                (if(equal? (cdr x) (cdr y))
+                   #t
+                   #f ))
+             #f )
+          #f )
+       #f )))
+
+;; Signature: append(list list)
+;; Purpose: takes two lists and returns the first list appended with the second.
+;; Type: [list(T)*list(T) -> list(T)]
+;; Precondition: true
+;; Tests: (append '(1 2 3) '(4 5 6)) ⇒ '(1 2 3 4 5 6)
+
+(define append
+  (lambda (x y)
+    (if(empty? x)
+       y
+       (cons (car x) (append(cdr x) y)))))
+
+;; Signature: append3(list list number)
+;; Purpose:  takes two lists and one item, and returns the first list appended with the second and the integer.
+;; Type: [list(T)*list(T)*Number -> list(T)]
+;; Precondition: true
+;; Tests: (append3 '(1 2 3) '(4 5 6) 7) ⇒ '(1 2 3 4 5 6 7)
+
+(define append3
+  (lambda (x y n)
+    (append (append x y) (cons n '()))))
+
+;; Signature: pascal(number)
+;; Purpose:   takes an integer n, and computes the nth row of Pascal's triangle. 
+;; Type: [Number -> list(Number)]
+;; Precondition: n >= 1
+;; Tests:  (pascal 5) => '(1 4 6 4 1)
+
+(define pascal
+  (lambda (n)
+    (if(= n 1)
+       (cons 1 '())
+       (cons 1 (addRow(pascal (- n 1)))))))
+
+(define addRow
+  (lambda (lst)
+    (if(empty? lst)
+       '()
+       (if(empty? (cdr lst))
+          (cons 1 '())
+          (cons (+ (car lst) (cadr lst)) (addRow(cdr lst)))))))
