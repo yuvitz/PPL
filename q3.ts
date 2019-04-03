@@ -1,11 +1,12 @@
 import { map, zipWith } from "ramda";
-import { CExp, Parsed, PrimOp, AppExp, LitExp, isEmpty, makeStrExp, parseL3, IfExp, DefineExp, Program, Binding, LetExp } from "./imp/L3-ast";
+import { CExp, Parsed, PrimOp, AppExp, LitExp, isEmpty, makeStrExp, parseL3, IfExp, DefineExp, Program, Binding, LetExp, isStrExp, isString, makeNumExp, isNumber, makeBoolExp } from "./imp/L3-ast";
 import { makeAppExp, makeDefineExp, makeIfExp, makeProcExp, makeProgram, makePrimOp, makeLetExp, makeBinding, makeLitExp } from "./imp/L3-ast";
 import { isAppExp, isAtomicExp, isCExp, isDefineExp, isIfExp, isLetExp, isLitExp, isPrimOp, isProcExp, isProgram } from "./imp/L3-ast";
 import {isError} from './imp/error';
-import { makeEmptySExp, isEmptySExp, isCompoundSExp } from "./imp/L3-value";
+import { makeEmptySExp, isEmptySExp, isCompoundSExp, SExp, CompoundSExp, makeCompoundSExp, isClosure, makeClosure, makeSymbolSExp } from "./imp/L3-value";
 import {first, second, rest} from './imp/list';
 import { unparseL3 } from "./imp/L3-unparse";
+import { isBoolean, isSymbol } from "util";
 /*
 Purpose: @TODO
 Signature: @TODO
@@ -34,7 +35,8 @@ export const handleCExp = (exp: CExp): CExp =>
       makeProcExp(exp.args, map(l3ToL30, exp.body)) :
    isLetExp(exp) ?
       makeLetExp(map(handleBinding, exp.bindings), map(l3ToL30, exp.body)) :
-   isLitExp(exp) ? rewriteLitExp(exp) : exp;
+   isLitExp(exp) ? handleLitExp(exp) : 
+   exp;
 
 export const handleAppExp = (exp: AppExp): CExp => 
    isPrimOp(exp.rator) && exp.rator.op === "list" ?  
@@ -50,9 +52,15 @@ export const rewriteAppExp = (exp: CExp[]): CExp =>
    makeAppExp(makePrimOp("cons"), [handleCExp(first(exp)), rewriteAppExp(rest(exp))]);
 
 export const handleLitExp = (exp: LitExp): CExp =>
-   exp;
-   
-export const rewriteLitExp = (exp: LitExp): CExp =>
+   isEmptySExp(exp.val) ? exp :
+   isCompoundSExp(exp.val) ? rewriteLitExp(exp.val) :
    exp;
 
-   console.log(unparseL3(l3ToL30(parseL3(`(let ((x '()) (y (list 3 4))) (list x y))`))));
+export const rewriteLitExp = (exp: CompoundSExp): CExp =>
+   makeAppExp(makePrimOp("cons"), [makeActualExp(exp.val1), handleLitExp(makeLitExp(exp.val2))]);
+
+export const makeActualExp = (exp: SExp): CExp =>
+   isNumber(exp.valueOf) ? makeNumExp(exp.valueOf) :
+   isBoolean(exp.valueOf) ? makeBoolExp(exp.valueOf) :
+   isString(exp.valueOf) ? makeStrExp(exp.valueOf) :
+   makeLitExp(exp);
