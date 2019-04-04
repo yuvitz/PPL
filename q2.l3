@@ -22,15 +22,19 @@
              (empty? y)
              (if(empty? y)
                 #f
-                (if(eq? (car x) (car y))
-                   (if(list? (cdr x))
-                      (if(list? (cdr y))
-                         (equal-list? (cdr x) (cdr y))
-                         #f )
-                      (if(eq? (cdr x) (cdr y))
-                         #t
-                         #f ))
-                   #f )))
+                (if(list? (car x))
+                   (if(list? (car y))
+                      (equal-list? (car x) (car y))
+                      #f )
+                   (if(eq? (car x) (car y))
+                      (if(list? (cdr x))
+                         (if(list? (cdr y))
+                            (equal-list? (cdr x) (cdr y))
+                            #f )
+                         (if(eq? (cdr x) (cdr y))
+                            #t
+                            #f ))
+                      #f ))))
           #f )
        #f)))
 
