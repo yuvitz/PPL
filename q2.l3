@@ -22,11 +22,13 @@
 
 (define list?
   (lambda (x)
-    (if (pair? x)
-      (if(pair? (cdr x))
-        #t
-        #f )
-      #f )))
+    (if(empty? x)
+      #t
+      (if (pair? x)
+        (if(list? (cdr x))
+          #t
+          #f )
+        #f ))))
 
 ;; Signature: equal-list?(T T)
 ;; Purpose: returns true iff the given two expressions are equal lists
@@ -41,17 +43,21 @@
   (lambda (x y)
     (if(list? x)
        (if(list? y)
-          (if(equal? (car x) (car y))
-             (if(list? (cdr x))
-                (if(list? (cdr y))
-                   (equal-list? (cdr x) (cdr y))
-                   #f )
-                (if(equal? (cdr x) (cdr y))
-                   #t
-                   #f ))
-             #f )
+          (if(empty? x)
+             (empty? y)
+             (if(empty? y)
+                #f
+                (if(equal? (car x) (car y))
+                   (if(list? (cdr x))
+                      (if(list? (cdr y))
+                         (equal-list? (cdr x) (cdr y))
+                         #f )
+                      (if(equal? (cdr x) (cdr y))
+                         #t
+                         #f ))
+                   #f )))
           #f )
-       #f )))
+       #f)))
 
 ;; Signature: append(list list)
 ;; Purpose: takes two lists and returns the first list appended with the second.
@@ -86,6 +92,8 @@
     (if(= n 1)
        (cons 1 '())
        (cons 1 (addRow(pascal (- n 1)))))))
+
+
 
 (define addRow
   (lambda (lst)
